@@ -31,7 +31,7 @@
 
   const eventImage = computed(() => {
     if (!props.event.attributes.image?.data?.attributes?.url) {
-      return '/images/placeholder-event.jpg';
+      return '../../images/placeholder-event.jpeg';
     }
 
     const url = props.event.attributes.image.data.attributes.url;

@@ -47,17 +47,8 @@
   const eventStore = useEventStore();
   const { events, loading } = storeToRefs(eventStore);
 
-  // Define the type for your event objects
-  interface Event {
-    id: number | string;
-    // Add other properties as needed, for example:
-    attributes: {
-      title: string;
-      venueName?: string;
-      city?: string;
-      // ...other event attributes
-    };
-  }
+  // Import the Event type from your strapi types
+  import type { Event } from '@/types/strapi';
 
   // Explicitly type events as Ref<Event[]>
   const typedEvents = events as unknown as import('vue').Ref<Event[]>;
