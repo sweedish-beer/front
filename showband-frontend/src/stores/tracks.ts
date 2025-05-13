@@ -1,37 +1,13 @@
 // src/stores/tracks.ts
 import { defineStore } from 'pinia'
 import { trackService } from '@/services/api'
-
-interface TrackAttributes {
-  title: string
-  featured?: boolean
-  // Add other properties as needed
-  coverArt?: {
-    data?: {
-      attributes?: {
-        url?: string
-      }
-    }
-  }
-  performer?: {
-    data?: {
-      attributes?: {
-        name?: string
-      }
-    }
-  }
-}
-
-interface Track {
-  id: number
-  attributes: TrackAttributes
-}
+import type { Track } from '@/types/strapi'
 
 export const useTrackStore = defineStore('tracks', {
   state: () => ({
     tracks: [] as Track[],
     loading: false,
-    error: null as any,
+    error: null as Error | null,
   }),
 
   actions: {
@@ -41,13 +17,10 @@ export const useTrackStore = defineStore('tracks', {
         console.log('Fetching tracks with params:', params)
         const data = await trackService.getAll(params)
         console.log('Received tracks data:', data)
-        if (!data || data.length === 0) {
-          console.warn('No tracks found in response')
-        }
         this.tracks = data || []
       } catch (error) {
         console.error('Error in store:', error)
-        this.error = error
+        this.error = error as Error
       } finally {
         this.loading = false
       }
@@ -55,10 +28,35 @@ export const useTrackStore = defineStore('tracks', {
 
     async fetchFeaturedTracks() {
       console.log('Fetching featured tracks')
-      await this.fetchTracks({
-        'filters[featured][$eq]': true,
-      })
-      console.log('Featured tracks count:', this.tracks.length)
+      this.loading = true
+      try {
+        const data = await trackService.getFeatured()
+        console.log('Featured tracks result:', data)
+        this.tracks = data || []
+      } catch (error) {
+        console.error('Error fetching featured tracks:', error)
+        this.error = error as Error
+      } finally {
+        this.loading = false
+      }
     },
+  },
+
+  getters: {
+    featuredTracks(): Track[] {
+      return this.tracks.filter((track) => track.attributes.featured)
+    },
+
+    tracksByPerformer:
+      (state) =>
+      (performerId: number): Track[] => {
+        return state.tracks.filter((track) => track.attributes.performer?.data?.id === performerId)
+      },
+
+    tracksByGenre:
+      (state) =>
+      (genre: string): Track[] => {
+        return state.tracks.filter((track) => track.attributes.genre === genre)
+      },
   },
 })

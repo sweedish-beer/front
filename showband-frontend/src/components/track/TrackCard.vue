@@ -1,15 +1,16 @@
+<!-- src/components/track/TrackCard.vue -->
 <template>
   <div class="track-card">
     <div class="track-image" @click="playTrack">
-      <img :src="trackImage" :alt="track.attributes.title" />
+      <img :src="trackImage" :alt="track.attributes.title || 'Track'" />
       <div class="play-overlay">
         <div class="play-icon">▶</div>
       </div>
     </div>
     <div class="track-info">
       <h3 class="track-title">{{ track.attributes.title }}</h3>
-      <p v-if="performer" class="track-performer">
-        {{ performer.attributes.name }}
+      <p v-if="performerName" class="track-performer">
+        {{ performerName }}
       </p>
       <p v-if="track.attributes.genre" class="track-genre">
         {{ track.attributes.genre }}
@@ -20,30 +21,31 @@
 
 <script setup lang="ts">
   import { computed } from 'vue';
+  import { usePlayerStore } from '@/stores/player';
+  import type { Track } from '@/types/strapi';
 
-  const props = defineProps({
-    track: {
-      type: Object,
-      required: true
-    }
-  });
+  const props = defineProps<{
+    track: Track
+  }>();
+
+  const playerStore = usePlayerStore();
 
   const trackImage = computed(() => {
-    if (!props.track?.attributes?.coverArt?.data) {
+    if (!props.track.attributes.coverArt?.data?.attributes?.url) {
       return '/images/placeholder-cover.jpg';
     }
 
-    return `${import.meta.env.VITE_API_URL}${props.track.attributes.coverArt.data.attributes.url}`;
+    const url = props.track.attributes.coverArt.data.attributes.url;
+    if (url.startsWith('http')) return url;
+    return `${import.meta.env.VITE_API_URL}${url}`;
   });
 
-  const performer = computed(() => {
-    return props.track?.attributes?.performer?.data || null;
+  const performerName = computed(() => {
+    return props.track.attributes.performer?.data?.attributes?.name || '';
   });
 
   function playTrack() {
-    // TODO: Implement track playback logic here
-    // For now, just log to the console
-    console.log('Play track:', props.track);
+    playerStore.setTrack(props.track);
   }
 </script>
 

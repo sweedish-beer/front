@@ -1,9 +1,12 @@
+<!-- src/components/performer/PerformerCard.vue -->
 <template>
   <div class="performer-card">
-    <router-link :to="`/performer/${performer.id}`">
+    <router-link :to="`/performers/${performer.attributes.slug}`">
       <div class="performer-image">
         <img :src="performerImage" :alt="performer.attributes.name" />
-        <span v-if="performer.attributes.verified" class="verified-badge">✔</span>
+        <div v-if="performer.attributes.verified" class="verified-badge">
+          ✓
+        </div>
       </div>
       <div class="performer-info">
         <h3 class="performer-name">{{ performer.attributes.name }}</h3>
@@ -17,20 +20,20 @@
 
 <script setup lang="ts">
   import { computed } from 'vue';
+  import type { Performer } from '@/types/strapi';
 
-  const props = defineProps({
-    performer: {
-      type: Object,
-      required: true
-    }
-  });
+  const props = defineProps<{
+    performer: Performer
+  }>();
 
   const performerImage = computed(() => {
-    if (!props.performer.attributes.profileImage?.data) {
-      return '/placeholder-profile.jpg';
+    if (!props.performer.attributes.profileImage?.data?.attributes?.url) {
+      return '/images/placeholder-profile.jpg';
     }
 
-    return `${import.meta.env.VITE_API_URL}${props.performer.attributes.profileImage.data.attributes.url}`;
+    const url = props.performer.attributes.profileImage.data.attributes.url;
+    if (url.startsWith('http')) return url;
+    return `${import.meta.env.VITE_API_URL}${url}`;
   });
 </script>
 

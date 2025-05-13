@@ -1,23 +1,20 @@
+<!-- src/components/event/EventCard.vue -->
 <template>
   <div class="event-card">
     <router-link :to="`/events/${event.id}`">
       <div class="event-image">
         <img :src="eventImage" :alt="event.attributes.title" />
         <div class="event-date">
-          <div class="date-day">{{ dateDay }}</div>
-          <div class="date-month">{{ dateMonth }}</div>
+          <div class="date-day">{{ eventDay }}</div>
+          <div class="date-month">{{ eventMonth }}</div>
         </div>
       </div>
       <div class="event-info">
         <h3 class="event-title">{{ event.attributes.title }}</h3>
         <p v-if="event.attributes.venueName" class="event-venue">
           {{ event.attributes.venueName }}
-          <span v-if="event.attributes.city"> · {{ event.attributes.city }}</span>
+          <span v-if="event.attributes.city">· {{ event.attributes.city }}</span>
         </p>
-        <div class="event-performers" v-if="event.attributes.performers?.data?.length">
-          <span v-for="(performer, index) in event.attributes.performers.data" :key="performer.id">
-            {{ performer.attributes.name }}{{ index < event.attributes.performers.data.length - 1 ? ', ' : '' }} </span>
-        </div>
         <div class="event-time">{{ eventTime }}</div>
       </div>
     </router-link>
@@ -26,28 +23,28 @@
 
 <script setup lang="ts">
   import { computed } from 'vue';
+  import type { Event } from '@/types/strapi';
 
-  const props = defineProps({
-    event: {
-      type: Object,
-      required: true
-    }
-  });
+  const props = defineProps<{
+    event: Event
+  }>();
 
   const eventImage = computed(() => {
-    if (!props.event.attributes.image?.data) {
-      return '/placeholder-event.jpg';
+    if (!props.event.attributes.image?.data?.attributes?.url) {
+      return '/images/placeholder-event.jpg';
     }
 
-    return `${import.meta.env.VITE_API_URL}${props.event.attributes.image.data.attributes.url}`;
+    const url = props.event.attributes.image.data.attributes.url;
+    if (url.startsWith('http')) return url;
+    return `${import.meta.env.VITE_API_URL}${url}`;
   });
 
-  const dateDay = computed(() => {
+  const eventDay = computed(() => {
     const date = new Date(props.event.attributes.dateTime);
     return date.getDate();
   });
 
-  const dateMonth = computed(() => {
+  const eventMonth = computed(() => {
     const date = new Date(props.event.attributes.dateTime);
     return date.toLocaleString('default', { month: 'short' });
   });
@@ -132,12 +129,6 @@
     margin: 0 0 var(--spacing-xs) 0;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
-  }
-
-  .event-performers {
-    margin: 0 0 var(--spacing-xs) 0;
-    font-size: var(--font-size-sm);
-    color: var(--primary);
   }
 
   .event-time {

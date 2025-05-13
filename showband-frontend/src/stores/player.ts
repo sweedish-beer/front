@@ -1,15 +1,6 @@
+// src/stores/player.ts
 import { defineStore } from 'pinia'
-
-interface Track {
-  id: number
-  attributes: {
-    title: string
-    audioFile: any
-    coverArt: any
-    performer: any
-    // Add other track properties
-  }
-}
+import type { Track } from '@/types/strapi'
 
 export const usePlayerStore = defineStore('player', {
   state: () => ({
@@ -45,6 +36,7 @@ export const usePlayerStore = defineStore('player', {
       if (this.currentIndex < this.queue.length - 1) {
         this.currentIndex++
         this.currentTrack = this.queue[this.currentIndex]
+        this.isPlaying = true
       }
     },
 
@@ -52,11 +44,50 @@ export const usePlayerStore = defineStore('player', {
       if (this.currentIndex > 0) {
         this.currentIndex--
         this.currentTrack = this.queue[this.currentIndex]
+        this.isPlaying = true
       }
     },
 
     setVolume(value: number) {
       this.volume = value
+    },
+  },
+
+  getters: {
+    hasNext(): boolean {
+      return this.currentIndex < this.queue.length - 1
+    },
+
+    hasPrevious(): boolean {
+      return this.currentIndex > 0
+    },
+
+    currentTrackDuration(): number | null {
+      return this.currentTrack?.attributes.duration || null
+    },
+
+    currentTrackAudioUrl(): string | null {
+      if (!this.currentTrack?.attributes.audioFile?.data?.attributes?.url) {
+        return null
+      }
+
+      const url = this.currentTrack.attributes.audioFile.data.attributes.url
+      if (url.startsWith('http')) return url
+      return `${import.meta.env.VITE_API_URL}${url}`
+    },
+
+    currentTrackCoverArtUrl(): string | null {
+      if (!this.currentTrack?.attributes.coverArt?.data?.attributes?.url) {
+        return null
+      }
+
+      const url = this.currentTrack.attributes.coverArt.data.attributes.url
+      if (url.startsWith('http')) return url
+      return `${import.meta.env.VITE_API_URL}${url}`
+    },
+
+    currentTrackPerformerName(): string | null {
+      return this.currentTrack?.attributes.performer?.data?.attributes?.name || null
     },
   },
 })

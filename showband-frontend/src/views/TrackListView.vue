@@ -1,3 +1,4 @@
+<!-- src/views/TrackListView.vue -->
 <template>
   <div class="track-list">
     <div class="page-header">
@@ -13,7 +14,7 @@
           <input type="text" v-model="search" placeholder="Search tracks..." @input="filterTracks" />
         </div>
 
-        <div class="genre-filter">
+        <div class="genre-filter" v-if="genres.length > 0">
           <select v-model="selectedGenre" @change="filterTracks">
             <option value="">All Genres</option>
             <option v-for="genre in genres" :key="genre" :value="genre">
@@ -38,18 +39,22 @@
             <span v-if="isCurrentTrack(track) && isPlaying">⏸</span>
             <span v-else>▶</span>
           </div>
+
           <div class="track-image">
             <img :src="getTrackImage(track)" :alt="track.attributes.title" />
           </div>
+
           <div class="track-details">
             <div class="track-title">{{ track.attributes.title }}</div>
             <div v-if="getPerformerName(track)" class="track-performer">
               {{ getPerformerName(track) }}
             </div>
           </div>
+
           <div v-if="track.attributes.genre" class="track-genre">
             {{ track.attributes.genre }}
           </div>
+
           <div class="track-duration">
             {{ formatDuration(track.attributes.duration) }}
           </div>
@@ -64,6 +69,7 @@
   import { useTrackStore } from '@/stores/tracks';
   import { usePlayerStore } from '@/stores/player';
   import { storeToRefs } from 'pinia';
+  import type { Track } from '@/types/strapi';
 
   const trackStore = useTrackStore();
   const playerStore = usePlayerStore();
@@ -74,9 +80,9 @@
   const selectedGenre = ref('');
 
   const genres = computed(() => {
-    const genreSet = new Set();
+    const genreSet = new Set<string>();
 
-    tracks.value.forEach(track => {
+    tracks.value.forEach((track: Track) => {
       if (track.attributes.genre) {
         genreSet.add(track.attributes.genre);
       }
@@ -86,7 +92,7 @@
   });
 
   const filteredTracks = computed(() => {
-    return tracks.value.filter(track => {
+    return tracks.value.filter((track: Track) => {
       const matchesSearch = search.value === '' ||
         track.attributes.title.toLowerCase().includes(search.value.toLowerCase());
 
@@ -101,20 +107,21 @@
     // This function exists just to trigger the computed property
   }
 
-  function getTrackImage(track) {
-    if (!track.attributes.coverArt?.data) {
-      return '/placeholder-cover.jpg';
+  function getTrackImage(track: Track): string {
+    if (!track.attributes.coverArt?.data?.attributes?.url) {
+      return '/images/placeholder-cover.jpg';
     }
 
-    return `${import.meta.env.VITE_API_URL}${track.attributes.coverArt.data.attributes.url}`;
+    const url = track.attributes.coverArt.data.attributes.url;
+    if (url.startsWith('http')) return url;
+    return `${import.meta.env.VITE_API_URL}${url}`;
   }
 
-  function getPerformerName(track) {
-    if (!track.attributes.performer?.data) return '';
-    return track.attributes.performer.data.attributes.name;
+  function getPerformerName(track: Track): string {
+    return track.attributes.performer?.data?.attributes?.name || '';
   }
 
-  function formatDuration(duration) {
+  function formatDuration(duration: number | null): string {
     if (!duration) return '--:--';
 
     const minutes = Math.floor(duration);
@@ -123,11 +130,11 @@
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   }
 
-  function isCurrentTrack(track) {
+  function isCurrentTrack(track: Track): boolean {
     return currentTrack.value?.id === track.id;
   }
 
-  function playTrack(track, index) {
+  function playTrack(track: Track, index: number): void {
     if (isCurrentTrack(track)) {
       if (isPlaying.value) {
         playerStore.pause();
@@ -260,20 +267,15 @@
     text-align: right;
   }
 
-  @media (max-width: 768px) {
-    .filters {
-      flex-direction: column;
-    }
-
-    .track-genre {
-      display: none;
-    }
+  .loading,
+  .empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
   }
 
-  @media (max-width: 576px) {
-    .track-image {
-      width: 40px;
-      height: 40px;
-    }
+  .empty-state {
+    background-color: var(--background-alt);
+    border-radius: var(--border-radius-md);
   }
 </style>
